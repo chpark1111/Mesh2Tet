@@ -1,0 +1,6 @@
+[submodule "ManifoldPlus"]
+	path = ManifoldPlus
+	url = https://github.com/hjwdzh/ManifoldPlus
+[submodule "TetWild"]
+	path = TetWild
+	url = https://github.com/Yixin-Hu/TetWild
