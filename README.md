@@ -2,7 +2,7 @@
 
 ## Initial build of programs
 ```
-git clone https://github.com/chpark1111/Mesh2Tet.git;
+git clone --recurse-submodules https://github.com/chpark1111/Mesh2Tet.git;
 cd Mesh2Tet/scripts; bash init.sh
 ```
 
