@@ -19,20 +19,20 @@ def parse_args():
     parser.add_argument(
         "--data_path",
         type=str,
-        default="/home/chpark1111/research/Mesh2Tet/data/shapenet_table",
+        default="/home/chpark1111/docker/geometry2/research/shapenet/shapenet_table",
         help="Directory of input triangular meshes",
     )
 
     parser.add_argument(
         "--result_path",
         type=str,
-        default="/home/chpark1111/research/Mesh2Tet/result/shapenet_table",
+        default="/home/chpark1111/docker/geometry2/research/Mesh2Tet/result/shapenet_table",
         help="Directory to save the result of tetrahedral meshes",
     )
 
     parser.add_argument("--num_worker", type=int, default=64, help="Number of workers to multiprocess")
     parser.add_argument(
-        "--num_vertex", type=int, default=1000, help="Number of vertices in the resulting tetrahedral mesh"
+        "--num_vertex", type=int, default=-1, help="Number of vertices in the resulting tetrahedral mesh"
     )
 
     parser.add_argument("--e", type=float, default=4e-3, help="Envelope of size epsilon, use larger value to lower the resolution")
@@ -60,8 +60,10 @@ def func(fn):
         p.kill()
         os.remove(os.path.join(args.result_path, fn))
         return 0
-
-    p = subprocess.Popen('../TetWild/build/TetWild --input %s --output %s -q --save-mid-result 0 --max-pass 0 -l %f -e %f --targeted-num-v %d --log %s --level 2'%(manmesh, tetmesh, args.l, args.e, args.num_vertex, logfile), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if args.num_vertex != -1:
+        p = subprocess.Popen('../TetWild/build/TetWild --input %s --output %s -q --save-mid-result 0 --max-pass 0 -l %f -e %f --targeted-num-v %d --log %s --level 2'%(manmesh, tetmesh, args.l, args.e, args.num_vertex, logfile), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        p = subprocess.Popen('../TetWild/build/TetWild --input %s --output %s -q --save-mid-result 0 --max-pass 0 -l %f -e %f --log %s --level 2'%(manmesh, tetmesh, args.l, args.e, logfile), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         return p.wait(timeout=3600)
     except subprocess.TimeoutExpired:
