@@ -1,0 +1,2 @@
+python3 mesh2tetra.py --e 1e-2 --l 0.1 --num_worker 64
+python3 mesh2tetra.py --data_path /home/chpark1111/docker/geometry2/research/shapenet/shapenet_chair --result_path /home/chpark1111/docker/geometry2/research/Mesh2Tet/result/shapenet_chair --num_worker 64 --e 1e-2 --l 0.1
