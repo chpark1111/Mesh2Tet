@@ -1,2 +1,2 @@
 ../ManifoldPlus/build/manifold --input ../data/model.obj --output ../result/model_manifold.obj
-../TetWild/build/TetWild --input ../result/model_manifold.obj --output ../result/tetra.msh -l 0.2 -e 4e-3 --max-pass 0 --save-mid-result 0 --targeted-num-v 1000 --log ../result/log.txt
+../TetWild/build/TetWild --input ../result/model_manifold.obj --output ../result/tetra.msh -l 0.1 -e 1e-3 --max-pass 0 --save-mid-result 0 --log ../result/log.txt

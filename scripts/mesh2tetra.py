@@ -4,6 +4,7 @@ import argparse
 import signal
 import subprocess
 import multiprocessing
+import shutil
 
 '''
 Todos!
@@ -54,22 +55,22 @@ def func(fn):
 
     p = subprocess.Popen('../ManifoldPlus/build/manifold --input %s --output %s'%(tmesh, manmesh), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
-        p.wait(timeout=3600)
+        p.wait(timeout=1200)
     except subprocess.TimeoutExpired:
         p.terminate()
         p.kill()
-        os.remove(os.path.join(args.result_path, fn))
+        shutil.rmtree(os.path.join(args.result_path, fn), ignore_errors=True)
         return 0
     if args.num_vertex != -1:
         p = subprocess.Popen('../TetWild/build/TetWild --input %s --output %s -q --save-mid-result 0 --max-pass 0 -l %f -e %f --targeted-num-v %d --log %s --level 2'%(manmesh, tetmesh, args.l, args.e, args.num_vertex, logfile), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
         p = subprocess.Popen('../TetWild/build/TetWild --input %s --output %s -q --save-mid-result 0 --max-pass 0 -l %f -e %f --log %s --level 2'%(manmesh, tetmesh, args.l, args.e, logfile), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
-        return p.wait(timeout=3600)
+        return p.wait(timeout=1200)
     except subprocess.TimeoutExpired:
         p.terminate()
         p.kill()
-        os.remove(os.path.join(args.result_path, fn))
+        shutil.rmtree(os.path.join(args.result_path, fn), ignore_errors=True)
         return 0
 
 if __name__ == "__main__":
@@ -94,4 +95,7 @@ if __name__ == "__main__":
         results = list(tqdm.tqdm(pool.imap_unordered(func, filenames), total=len(filenames)))
 
     print("Total processed: %d, Success: %d, Failed: %d"%(len(filenames), results.count(0), len(filenames)-results.count(0)))
-    os.kill(-os.getpid(), signal.SIGINT)
+    try:
+        os.kill(-os.getpid(), signal.SIGINT)
+    except ProcessLookupError:
+        print("Exited normally")
