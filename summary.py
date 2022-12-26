@@ -32,6 +32,8 @@ if __name__ == "__main__":
 
     dataset_names = []
     for f in os.listdir(args.data_path):
+        if f == ".gitkeep":
+            continue
         dataset_names.append(f)
 
     for ds_name in dataset_names:
@@ -68,15 +70,15 @@ if __name__ == "__main__":
             sum_faces += len(pymsh.faces)
             num_cnt += 1
 
-            if len(pymsh.vertices) >= 1200:
+            if len(pymsh.vertices) >= 1000:
                 many_mesh += 1
 
         assert len(filenames)-not_tetra-broken_mesh == num_cnt
 
-        print("For %s dataset, "%(args.name))
+        print("For %s dataset, "%(ds_name))
         print("Good Meshes: %d, Broken Meshes: %d, Failed Meshes: %d"%(num_cnt, broken_mesh, not_tetra))
         print("Average number of vertices: %f, Average number of faces: %f"%(sum_vert/num_cnt, sum_faces/num_cnt))
-        print("Number of meshes that have vertices larger than 1200: %d"%(many_mesh))
+        print("Number of meshes that have vertices larger than 1000: %d"%(many_mesh))
         
         if args.fix:
             for fn in filenames:
@@ -90,6 +92,6 @@ if __name__ == "__main__":
                 pymsh = pymesh.load_mesh(msh_file)
                 trimsh = trimesh.Trimesh(pymsh.vertices, pymsh.faces)
 
-                if not trimsh.is_watertight:
+                if not trimsh.is_watertight or len(pymsh.vertices) >= 1000:
                     shutil.rmtree(f)
                     continue
