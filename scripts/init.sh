@@ -5,10 +5,10 @@ cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j8
 echo "Finished building ManifoldPlus"
-echo "Building TetWild"
-cd ../../TetWild
+echo "Building fTetWild"
+cd ../../fTetWild
 mkdir build
 cd build
 cmake ..
 make
-echo "Finished building Tetwild"
+echo "Finished building fTetwild"

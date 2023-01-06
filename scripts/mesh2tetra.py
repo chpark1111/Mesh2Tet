@@ -4,13 +4,10 @@ import argparse
 import signal
 import subprocess
 import multiprocessing
+import trimesh
 import shutil
+from glob import glob
 
-'''
-Todos!
-How to minimize collapsed cases??
-
-'''
 def parse_args():
 
     """parse input arguments"""
@@ -32,12 +29,16 @@ def parse_args():
     )
 
     parser.add_argument("--num_worker", type=int, default=64, help="Number of workers to multiprocess")
+
+    parser.add_argument("--e", type=float, default=1e-3, help="Envelope of size epsilon, use larger value to lower the resolution")
+    parser.add_argument("--l", type=float, default=0.05, help="Ideal edge length, use larger value to lower the resolution")
     parser.add_argument(
-        "--num_vertex", type=int, default=-1, help="Number of vertices in the resulting tetrahedral mesh"
+        "--coarsen",
+        default=False,
+        action="store_true",
+        help="coarsen the meshes if on",
     )
 
-    parser.add_argument("--e", type=float, default=4e-3, help="Envelope of size epsilon, use larger value to lower the resolution")
-    parser.add_argument("--l", type=float, default=0.2, help="Ideal edge length, use larger value to lower the resolution")
     args = parser.parse_args()
     return args
 
@@ -48,10 +49,10 @@ def func(fn):
     logfile = os.path.join(os.path.join(args.result_path, fn), 'log.txt')
     
     if not os.path.exists(os.path.join(args.result_path, fn)):
-        return 0
+        return 1
     if not os.path.exists(tmesh):
         os.remove(os.path.join(args.result_path, fn))
-        return 0
+        return 1
 
     p = subprocess.Popen('../ManifoldPlus/build/manifold --input %s --output %s'%(tmesh, manmesh), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
@@ -60,24 +61,36 @@ def func(fn):
         p.terminate()
         p.kill()
         shutil.rmtree(os.path.join(args.result_path, fn), ignore_errors=True)
-        return 0
-    if args.num_vertex != -1:
-        p = subprocess.Popen('../TetWild/build/TetWild --input %s --output %s -q --save-mid-result 0 --max-pass 0 -l %f -e %f --targeted-num-v %d --log %s --level 2'%(manmesh, tetmesh, args.l, args.e, args.num_vertex, logfile), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    else:
-        p = subprocess.Popen('../TetWild/build/TetWild --input %s --output %s -q --save-mid-result 0 --max-pass 0 -l %f -e %f --log %s --level 2'%(manmesh, tetmesh, args.l, args.e, logfile), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return 1
+    
+    p = subprocess.Popen('../fTetWild/build/FloatTetwild_bin --input %s --output %s -q -l %f -e %f --log %s --max-threads 32 --level 2 --use-floodfill --manifold-surface%s'%(manmesh, tetmesh, args.l, args.e, logfile, (" --coarsen" if args.coarsen else "")), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
-        return p.wait(timeout=1200)
+        exit_code = p.wait(timeout=3600)
+        
+        if exit_code == 0:
+            trimsh = trimesh.load(os.path.join(os.path.join(args.result_path, fn), "tetra.msh__sf.obj"), file_type="obj", process=False)
+            manifold_trimsh = trimesh.load(os.path.join(os.path.join(args.result_path, fn), "model_manifold.obj"), file_type="obj", process=False)
+
+            if abs(manifold_trimsh.volume - trimsh.volume) >= 1e-4 or not trimsh.is_watertight:
+                shutil.rmtree(os.path.join(args.result_path, fn), ignore_errors=True)
+                return 1
+        else:
+            shutil.rmtree(os.path.join(args.result_path, fn), ignore_errors=True)
+            return 1    
+
     except subprocess.TimeoutExpired:
         p.terminate()
         p.kill()
         shutil.rmtree(os.path.join(args.result_path, fn), ignore_errors=True)
-        return 0
+        return 1
 
 if __name__ == "__main__":
     args = parse_args()
 
-    args.result_path += '_e%f_l%f_nv%d'%(args.e, args.l, args.num_vertex)
-
+    args.result_path += '_e%g_l%g'%(args.e, args.l)
+    if args.coarsen:
+        args.result_path +=  "_coarsen"
+    
     if not os.path.exists(args.data_path):
         assert 0, "Data path does not exist"
     if not os.path.exists(args.result_path):

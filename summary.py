@@ -4,6 +4,7 @@ import argparse
 import shutil
 import pymesh
 import trimesh
+import trimesh.exchange.load
 
 from argparse import Namespace
 
@@ -37,6 +38,7 @@ if __name__ == "__main__":
         dataset_names.append(f)
 
     for ds_name in dataset_names:
+        print(ds_name)
         dataset_path = os.path.join(args.data_path, ds_name)
         if not os.path.exists(dataset_path):
             assert 0, "Dataset path does not exist"
@@ -49,8 +51,8 @@ if __name__ == "__main__":
         sum_vert = 0
         sum_faces = 0
         num_cnt = 0
+        open_mesh = 0
         broken_mesh = 0
-        many_mesh = 0
         for fn in tqdm.tqdm(filenames):
             f = os.path.join(dataset_path, fn)
 
@@ -60,26 +62,29 @@ if __name__ == "__main__":
 
             msh_file = os.path.join(f, "tetra.msh")
             pymsh = pymesh.load_mesh(msh_file)
-            trimsh = trimesh.Trimesh(pymsh.vertices, pymsh.faces)
+
+            trimsh = trimesh.exchange.load.load(os.path.join(f, "tetra.msh__sf.obj"), file_type="obj", process=False)
+
+            manifold_trimsh = trimesh.exchange.load.load(os.path.join(f, "model_manifold.obj"), file_type="obj", process=False)
+            
+            if abs(manifold_trimsh.volume - trimsh.volume) >= 3e-4:
+                broken_mesh += 1
 
             if not trimsh.is_watertight:
-                broken_mesh += 1
+                open_mesh += 1
                 continue
-
+            
             sum_vert += len(pymsh.vertices)
             sum_faces += len(pymsh.faces)
             num_cnt += 1
 
-            if len(pymsh.vertices) >= 1000:
-                many_mesh += 1
-
-        assert len(filenames)-not_tetra-broken_mesh == num_cnt
+        assert len(filenames)-not_tetra-open_mesh == num_cnt
 
         print("For %s dataset, "%(ds_name))
-        print("Good Meshes: %d, Broken Meshes: %d, Failed Meshes: %d"%(num_cnt, broken_mesh, not_tetra))
+        print("Good Meshes: %d, Open Meshes: %d, Failed Meshes: %d"%(num_cnt, open_mesh, not_tetra))
         print("Average number of vertices: %f, Average number of faces: %f"%(sum_vert/num_cnt, sum_faces/num_cnt))
-        print("Number of meshes that have vertices larger than 1000: %d"%(many_mesh))
-        
+        print("Number of meshes with big volume difference: %d"%(broken_mesh))
+        print()
         if args.fix:
             for fn in filenames:
                 f = os.path.join(dataset_path, fn)
@@ -90,8 +95,10 @@ if __name__ == "__main__":
                     
                 msh_file = os.path.join(f, "tetra.msh")
                 pymsh = pymesh.load_mesh(msh_file)
-                trimsh = trimesh.Trimesh(pymsh.vertices, pymsh.faces)
+                trimsh = trimesh.exchange.load.load(os.path.join(f, "tetra.msh__sf.obj"), file_type="obj", process=False)
 
-                if not trimsh.is_watertight or len(pymsh.vertices) >= 1000:
+                manifold_trimsh = trimesh.exchange.load.load(os.path.join(f, "model_manifold.obj"), file_type="obj", process=False)
+
+                if not trimsh.is_watertight:
                     shutil.rmtree(f)
                     continue

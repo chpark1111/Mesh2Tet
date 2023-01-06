@@ -4,3 +4,6 @@
 [submodule "TetWild"]
 	path = TetWild
 	url = https://github.com/Yixin-Hu/TetWild
+[submodule "fTetWild"]
+	path = fTetWild
+	url = https://github.com/wildmeshing/fTetWild.git

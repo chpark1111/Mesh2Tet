@@ -1,2 +1,2 @@
 ../ManifoldPlus/build/manifold --input ../data/model.obj --output ../result/model_manifold.obj
-../TetWild/build/TetWild --input ../result/model_manifold.obj --output ../result/tetra.msh -l 0.1 -e 1e-3 --max-pass 0 --save-mid-result 0 --log ../result/log.txt
+../fTetWild/build/FloatTetwild_bin --input ../result/model_manifold.obj --output ../result/tetmesh.msh -l 0.05 -e 1e-3 --level 2 --use-floodfill --manifold-surface
