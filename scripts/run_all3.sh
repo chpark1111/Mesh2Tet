@@ -1,0 +1,2 @@
+python3 mesh2tetra.py --data_path /home/chpark1111/docker/geometry2/research/shapenet/shapenet_airplane --result_path /home/chpark1111/docker/geometry2/research/Mesh2Tet/final_data/shapenet_airplane --num_worker 24 --e 1e-3 --l 0.05
+# python3 mesh2tetra.py --data_path /home/chpark1111/docker/geometry2/research/shapenet/shapenet_airplane --result_path /home/chpark1111/docker/geometry2/research/Mesh2Tet/final_data/shapenet_airplane --num_worker 16 --e 1e-3 --l 0.05

@@ -6,7 +6,12 @@ import subprocess
 import multiprocessing
 import trimesh
 import shutil
-from glob import glob
+import numpy as np
+import random
+
+seed = 7777
+random.seed(seed)
+np.random.seed(seed)
 
 def parse_args():
 
@@ -24,7 +29,7 @@ def parse_args():
     parser.add_argument(
         "--result_path",
         type=str,
-        default="/home/chpark1111/docker/geometry2/research/Mesh2Tet/result/shapenet_table",
+        default="",
         help="Directory to save the result of tetrahedral meshes",
     )
 
@@ -71,13 +76,19 @@ def func(fn):
             trimsh = trimesh.load(os.path.join(os.path.join(args.result_path, fn), "tetra.msh__sf.obj"), file_type="obj", process=False)
             manifold_trimsh = trimesh.load(os.path.join(os.path.join(args.result_path, fn), "model_manifold.obj"), file_type="obj", process=False)
 
-            if abs(manifold_trimsh.volume - trimsh.volume) >= 1e-4 or not trimsh.is_watertight:
+            vert2 = trimesh.sample.sample_surface(manifold_trimsh, 512)[0]
+
+            sdf_query = trimesh.proximity.ProximityQuery(trimsh)
+            sdf = sdf_query.signed_distance(vert2)
+
+            if not trimsh.is_watertight or len(trimesh.graph.split(trimsh)) > 1 or np.min(sdf) < -0.05:
                 shutil.rmtree(os.path.join(args.result_path, fn), ignore_errors=True)
                 return 1
         else:
             shutil.rmtree(os.path.join(args.result_path, fn), ignore_errors=True)
-            return 1    
+            return 1
 
+        return exit_code
     except subprocess.TimeoutExpired:
         p.terminate()
         p.kill()
